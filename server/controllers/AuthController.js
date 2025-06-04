@@ -1,6 +1,8 @@
 import { compare } from "bcrypt";
 import User from "../models/userModel.js";
 import jwt from "jsonwebtoken";
+import { renameSync, unlinkSync } from "fs";
+
 const maxAge = 3 * 24 * 60 * 60 * 1000;
 const createToken = (email, userId) => {
   return jwt.sign({ email, userId }, process.env.JWT_KEY, {
@@ -104,7 +106,7 @@ export const updateProfile = async (req, res, next) => {
     const { userId } = req;
     const { firstName, lastName, color } = req.body;
 
-    if (!lastName || !firstName ) {
+    if (!lastName || !firstName) {
       return res
         .status(404)
         .send("First Name,Last Name And Color Is Required ");
@@ -130,6 +132,49 @@ export const updateProfile = async (req, res, next) => {
       image: userData.image,
       color: userData.color,
     });
+  } catch (error) {
+    console.error("Error during signup:", error);
+    return res.status(500).send("Internal server error");
+  }
+};
+export const addProfileImage = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).send("File Is Required. ");
+    }
+
+    const date = Date.now();
+    let fileName = "uploads/profiles/" + date + req.file.originalname;
+    renameSync(req.file.path, fileName);
+    const updatedUser = await User.findByIdAndUpdate(
+      req.userId,
+      {
+        image: fileName,
+      },
+      { new: true, runValidators: true }
+    );
+    return res.status(200).json({
+      image: updatedUser.image,
+    });
+  } catch (error) {
+    console.error("Error during signup:", error);
+    return res.status(500).send("Internal server error");
+  }
+};
+export const removeProfileImage = async (req, res, next) => {
+  try {
+    const { userId } = req;
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).send("User not found");
+    }
+    if (user.image) {
+      unlinkSync(user.image);
+    }
+    user.image = null;
+    await user.save();
+  
+    return res.status(200).send("Profile image removed successfully");
   } catch (error) {
     console.error("Error during signup:", error);
     return res.status(500).send("Internal server error");

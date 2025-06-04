@@ -1,4 +1,4 @@
-import React, { useState,useEffect} from "react";
+import { useState, useEffect, useRef } from "react";
 import { IoArrowBack } from "react-icons/io5";
 import { FaTrash, FaPlus } from "react-icons/fa";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -9,7 +9,12 @@ import { useAppStore } from "@/store";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/api-client";
 import { useNavigate } from "react-router-dom";
-  import { UPDATE_PROFILE_ROUTE } from "@/utils/constants";
+import {
+  UPDATE_PROFILE_ROUTE,
+  ADD_PROFILE_IMAGE_ROUTE,
+  HOST,
+  REMOVE_PROFILE_IMAGE_ROUTE,
+} from "@/utils/constants";
 
 const Profile = () => {
   const { userInfo, setUserInfo } = useAppStore();
@@ -20,23 +25,26 @@ const Profile = () => {
   const [hovered, setHovered] = useState(false);
   const [selectedColour, setSelectedColour] = useState(0);
   const [showColorPicker, setShowColorPicker] = useState(false);
-
-useEffect(() => {
-  if (userInfo.profileSetup) {
-    setFirstName(userInfo.firstName || "");
-    setLastName(userInfo.lastName || "");
-    setSelectedColour(userInfo.selectedColour ?? 0); // use nullish coalescing
-  }
-}, [userInfo]);
-
-  const handleNavigate=()=>{
+  const fileInputRef = useRef(null);
+  useEffect(() => {
     if (userInfo.profileSetup) {
-      navigate("/chat")
-    }else{
+      setFirstName(userInfo.firstName || "");
+      setLastName(userInfo.lastName || "");
+      setSelectedColour(userInfo.selectedColour ?? 0);
+    }
+    if (userInfo.image) {
+      setImage(`${HOST}/${userInfo.image}`);
+    }
+  }, [userInfo, userInfo.image]);
+
+  const handleNavigate = () => {
+    if (userInfo.profileSetup) {
+      navigate("/chat");
+    } else {
       toast.error("Please Setup Your Profile First");
     }
-  }
-  
+  };
+
   const validateProfile = () => {
     if (!firstName) {
       toast.error("First Name Is Requird");
@@ -58,7 +66,7 @@ useEffect(() => {
           { withCredentials: true }
         );
         if (response.status === 200 && response.data) {
-          setUserInfo({ ...response.data  });
+          setUserInfo({ ...response.data });
           toast.success("Profile Update SuccessFully");
           navigate("/chat");
         }
@@ -67,7 +75,40 @@ useEffect(() => {
       }
     }
   };
+  const handleFileInput = () => {
+    fileInputRef.current.click();
+  };
+  const handleImageChange = async (e) => {
+    const file = e.target.files[0]; // ← correct way to get the File
+    if (file) {
+      const formData = new FormData();
+      formData.append("profile-image", file);
 
+      const response = await apiClient.post(ADD_PROFILE_IMAGE_ROUTE, formData, {
+        withCredentials: true,
+      });
+
+      if (response.status === 200 && response.data.image) {
+       setUserInfo({...userInfo,image:response.data.image})
+        toast.success("Profile Image Updated Successfully");
+      }
+    }
+  };
+
+  const handleDeleteImage = async () => {
+    try {
+      const response = await apiClient.delete(REMOVE_PROFILE_IMAGE_ROUTE, {
+        withCredentials: true,
+      });
+      if (response.status === 200) {
+       setUserInfo({ ...userInfo, image: null });
+        setImage(null);
+        toast.success("Profile Image Deleted Successfully");
+      }
+    } catch (error) {
+      console.error("Error deleting image:", error);
+    }
+  };
   return (
     <div className="bg-[#1b1c24] h-screen flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-4xl flex flex-col gap-10">
@@ -101,7 +142,10 @@ useEffect(() => {
             </Avatar>
 
             {hovered && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full cursor-pointer">
+              <div
+                className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full cursor-pointer"
+                onClick={image ? handleDeleteImage : handleFileInput}
+              >
                 {image ? (
                   <FaTrash className="text-white text-3xl" />
                 ) : (
@@ -109,6 +153,14 @@ useEffect(() => {
                 )}
               </div>
             )}
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              onChange={handleImageChange}
+              name="profile-image"
+              accept=".png,.jpg,.jpeg,.svg,.webp"
+            />
           </div>
 
           {/* Input Fields */}
