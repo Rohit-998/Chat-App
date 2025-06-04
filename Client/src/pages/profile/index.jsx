@@ -1,30 +1,78 @@
-import React, { useState } from "react";
+import React, { useState,useEffect} from "react";
 import { IoArrowBack } from "react-icons/io5";
 import { FaTrash, FaPlus } from "react-icons/fa";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { colors, getColor } from "../../lib/utils";
 import { Button } from "@/components/ui/button";
+import { useAppStore } from "@/store";
+import { toast } from "sonner";
+import { apiClient } from "@/lib/api-client";
+import { useNavigate } from "react-router-dom";
+  import { UPDATE_PROFILE_ROUTE } from "@/utils/constants";
 
 const Profile = () => {
-  const userInfo = {
-    email: "Rohit@99819",
-  };
-
+  const { userInfo, setUserInfo } = useAppStore();
+  const navigate = useNavigate();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [image, setImage] = useState(null);
   const [hovered, setHovered] = useState(false);
   const [selectedColour, setSelectedColour] = useState(0);
-  const [showColorPicker, setShowColorPicker] = useState(false); // <-- Popup state
+  const [showColorPicker, setShowColorPicker] = useState(false);
 
-  const saveChanges = () => {};
+useEffect(() => {
+  if (userInfo.profileSetup) {
+    setFirstName(userInfo.firstName || "");
+    setLastName(userInfo.lastName || "");
+    setSelectedColour(userInfo.selectedColour ?? 0); // use nullish coalescing
+  }
+}, [userInfo]);
+
+  const handleNavigate=()=>{
+    if (userInfo.profileSetup) {
+      navigate("/chat")
+    }else{
+      toast.error("Please Setup Your Profile First");
+    }
+  }
+  
+  const validateProfile = () => {
+    if (!firstName) {
+      toast.error("First Name Is Requird");
+      return false;
+    }
+    if (!lastName) {
+      toast.error("Last Name Is Requird");
+      return false;
+    }
+    return true;
+  };
+
+  const saveChanges = async () => {
+    if (validateProfile()) {
+      try {
+        const response = await apiClient.post(
+          UPDATE_PROFILE_ROUTE,
+          { firstName, lastName, color: selectedColour },
+          { withCredentials: true }
+        );
+        if (response.status === 200 && response.data) {
+          setUserInfo({ ...response.data  });
+          toast.success("Profile Update SuccessFully");
+          navigate("/chat");
+        }
+      } catch (err) {
+        console.log(err);
+      }
+    }
+  };
 
   return (
     <div className="bg-[#1b1c24] h-screen flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-4xl flex flex-col gap-10">
-        <div>
-          <IoArrowBack className="text-4xl text-white cursor-pointer" />
+        <div onClick={handleNavigate}>
+          <IoArrowBack className="text-4xl text-white cursor-pointer hover:text-5xl" />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
