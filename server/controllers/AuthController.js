@@ -29,7 +29,6 @@ export const signup = async (req, res, next) => {
       user: {
         id: user.id,
         email: user.email,
-        firstName: user.firstName,
 
         profileSetup: user.profileSetup,
       },
@@ -46,14 +45,14 @@ export const login = async (req, res, next) => {
       return res.status(400).send("Email and password are required");
     }
     const user = await User.findOne({
-      email,
+      email
     });
     if (!user) {
       return res.status(404).send("User Dont Exist");
     }
     const auth = await compare(password, user.password);
     if (!auth) {
-      return res.status(404).send(" Password Is Incorrect");
+      return res.status(404).send("Password Is Incorrect");
     }
     res.cookie("jwt", createToken(email, user.id), {
       maxAge,
@@ -64,10 +63,9 @@ export const login = async (req, res, next) => {
       user: {
         id: user.id,
         email: user.email,
-        firstName: user.firstName,
-
         profileSetup: user.profileSetup,
         firstName: user.firstName,
+
         lastName: user.lastName,
         image: user.image,
         color: user.color,
@@ -88,10 +86,10 @@ export const getUserInfo = async (req, res, next) => {
     return res.status(200).json({
       id: userData.id,
       email: userData.email,
-      firstName: userData.firstName,
-
       profileSetup: userData.profileSetup,
       firstName: userData.firstName,
+
+      
       lastName: userData.lastName,
       image: userData.image,
       color: userData.color,
@@ -125,9 +123,9 @@ export const updateProfile = async (req, res, next) => {
       id: userData.id,
       email: userData.email,
       firstName: userData.firstName,
-
       profileSetup: userData.profileSetup,
-      firstName: userData.firstName,
+
+      
       lastName: userData.lastName,
       image: userData.image,
       color: userData.color,
@@ -173,10 +171,25 @@ export const removeProfileImage = async (req, res, next) => {
     }
     user.image = null;
     await user.save();
-  
+
     return res.status(200).send("Profile image removed successfully");
   } catch (error) {
     console.error("Error during signup:", error);
     return res.status(500).send("Internal server error");
   }
 };
+export const logout = async (req, res, next) => {
+  try {
+    res.cookie("jwt", "", {
+      maxAge: 1,
+      secure: true,
+      sameSite: "None",
+    });
+
+    return res.status(200).send("Logged out successfully");
+  } catch (error) {
+    console.error("Error during logout:", error);
+    return res.status(500).send("Internal server error");
+  }
+};
+

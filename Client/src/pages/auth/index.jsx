@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/api-client";
-import { LOGIN_ROUTE, SIGNUP_ROUTE } from "@/utils/constants";
+import { LOGIN_ROUTE, SIGNUP_ROUTE } from "@/utils/constants.js";
 import { useNavigate } from "react-router-dom";
 import { useAppStore } from "@/store";
 const Auth = () => {
@@ -15,6 +15,9 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+
+
+  
   const validateSignup = () => {
     if (!email.length) {
       toast.error("Email is required.");
