@@ -23,7 +23,7 @@ jobs:
           node-version: '18.x'
 
       - name: Install dependencies and build
-        working-directory: 
+        working-directory: ./server 
         run: |
           npm install
           npm run build
