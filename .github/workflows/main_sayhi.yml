@@ -20,20 +20,19 @@ jobs:
           node-version: '18.x'
 
       - name: Install dependencies and build
-        working-directory: ./server  # ✅ Change this to where package.json exists
+        working-directory: ./server  # ✅ This points to the folder containing your package.json
         run: |
           npm install
-          npm run build  # optional if you have a build step
 
       - name: Zip artifact for deployment
         run: zip -r release.zip .
-        working-directory: ./server  # ✅ match above
+        working-directory: ./server  # ✅ Same folder as above
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v3
         with:
           name: node-app
-          path: ./server/release.zip  # ✅ make sure this matches too
+          path: ./server/release.zip
 
   deploy:
     runs-on: ubuntu-latest
@@ -54,7 +53,7 @@ jobs:
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
-          app-name: 'SayHi'
+          app-name: 'SayHi'  # ✅ Replace with your Azure Web App name
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: .
